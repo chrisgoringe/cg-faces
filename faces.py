@@ -3,7 +3,8 @@ import numpy as np
 import torch
 import folder_paths
 from PIL import Image
-import os, random
+import os, random, statistics
+import cv2
 
 DETECTORS = [ 'ssd', 'mtcnn', 'retinaface', 'mediapipe', 'opencv',  ]
 # 'dlib' seems not to download  (issue #2), 'yolov8','yunet','fastmtcnn' detect nothing (issue #3)
@@ -14,6 +15,8 @@ MODELS = ["Facenet512", "Facenet", "VGG-Face", "OpenFace", "DeepFace"]
 # 'dlib' seems not to download  (issue #2),
 
 def save_temp(image:torch.Tensor):
+    if not os.path.exists(folder_paths.get_temp_directory()):
+        os.makedirs(folder_paths.get_temp_directory())
     filepath = os.path.join(folder_paths.get_temp_directory(),f"{random.randint(1000000,9999999)}.png")
     image = 255. * image.cpu().numpy()
     image = Image.fromarray(np.clip(image, 0, 255).astype(np.uint8))
@@ -26,6 +29,8 @@ def similarity(file1, file2, detector, model):
         return 1.0 - result['distance']
     except ValueError:
         return 0.0
+    except cv2.error:
+        return 0.0
 
 class FaceCompare:
     RETURN_TYPES = ("FLOAT","STRING",)
@@ -35,18 +40,22 @@ class FaceCompare:
     @classmethod
     def INPUT_TYPES(s):
         return { "required": { 
-            "image1" : ("IMAGE", {}), 
-            "image2" : ("IMAGE", {}),  
+            "true_image" : ("IMAGE", {}), 
+            "candidates" : ("IMAGE", {}),  
+            "batch_mode" : (["average", "best"], {}),
             "detector": (DETECTORS, {}),
             "model" : (MODELS, {}),
             }, }
     
-    def func(self, image1, image2, detector, model):
-        if not image1.shape[0]==1 and image2.shape[0]==1: return (0,"Batches not supported",)
-        f1 = save_temp(image1[0])
-        f2 = save_temp(image2[0])
-        s = similarity(f1, f2, detector, model)
-        return (s,f"{s}",)
+    def func(self, true_image, candidates, batch_mode, detector, model):
+        if not true_image.shape[0]==1: return (0,"Batches not supported for true_image",)
+        f1 = save_temp(true_image[0])
+        s = [similarity(f1, save_temp(c), detector, model) for c in candidates]
+        nz = [x for x in s if x!=0]
+        if len(nz)==0:
+            return (0,"No faces found in candidates",)
+        ret = statistics.mean(nz) if batch_mode=="average" else max(nz)
+        return (ret,f"{batch_mode} was {ret}\n{s}",)
     
 class MostSimilar:
     RETURN_TYPES = ("IMAGE","STRING",)
