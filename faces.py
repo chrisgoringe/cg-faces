@@ -6,7 +6,7 @@ from PIL import Image
 import os, random, statistics
 import cv2
 
-DETECTORS = [ 'ssd', 'mtcnn', 'retinaface', 'mediapipe', 'opencv',  ]
+DETECTORS = [ 'retinaface', 'ssd', 'mtcnn', 'mediapipe', 'opencv',  ]
 # 'dlib' seems not to download  (issue #2), 'yolov8','yunet','fastmtcnn' detect nothing (issue #3)
 # 'opencv' doesn't detect all faces (issue #6)
 
