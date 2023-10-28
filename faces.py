@@ -9,8 +9,9 @@ DETECTORS = [ 'ssd', 'mtcnn', 'retinaface', 'mediapipe', 'opencv',  ]
 # 'dlib' seems not to download  (issue #2), 'yolov8','yunet','fastmtcnn' detect nothing (issue #3)
 # 'opencv' doesn't detect all faces (issue #6)
 
-MODELS = ["Facenet512", "Facenet", "VGG-Face", "OpenFace", "DeepFace", "Dlib"]
+MODELS = ["Facenet512", "Facenet", "VGG-Face", "OpenFace", "DeepFace"]
 # "DeepID" gives everything 0.0 (issue #5)
+# 'dlib' seems not to download  (issue #2),
 
 def save_temp(image:torch.Tensor):
     filepath = os.path.join(folder_paths.get_temp_directory(),f"{random.randint(1000000,9999999)}.png")
